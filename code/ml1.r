@@ -440,3 +440,75 @@ tune7_val.1 <- tune_grid(
 toc()
 
 tune7_val.1 %>% show_best(metric='roc_auc')
+
+tic()
+tune7_val.2 <- tune_bayes(
+    flow7,
+    resamples=val_split,
+    iter=30,
+    metrics=loss_fn,
+    param_info=params7,
+    control=control_bayes(verbose=TRUE, no_improve=8)
+)
+toc()
+
+tune7_val.2 %>% autoplot(metric='roc_auc')
+tune7_val.2 %>% show_best(metric='roc_auc')
+
+# simulated annealing from {finetune}
+
+boost_tree(
+    mode='classification',
+    learn_rate=0.15,
+    trees=157,
+    tree_depth=2,
+    sample_size=0.958
+) %>% 
+    set_engine('xgboost', scale_pos_weight=!!scaler)
+
+# Finalize Model ####
+
+rec8 <- recipe(Status ~ ., data=train) %>% 
+    step_other(all_nominal(), -Status, other='Misc') %>% 
+    # remove columns with very little variance
+    # as opposed to step_zv
+    step_nzv(all_predictors(), freq_cut=tune()) %>% 
+    step_dummy(all_nominal(), -Status, one_hot=TRUE)
+rec8
+
+flow8 <- flow7 %>% 
+    update_recipe(rec8)
+flow8
+
+flow8 %>% parameters()
+params8 <- flow8 %>% 
+    parameters() %>% 
+    update(
+        trees=trees(range=c(20, 800)),
+        tree_depth=tree_depth(range=c(2, 8)),
+        sample_size=sample_prop(range=c(0.3, 1)),
+        freq_cut=freq_cut(range=c(5, 25))
+    )
+
+grid8 <- grid_max_entropy(params8, size=80)
+grid8
+
+tic()
+tune8_val <- tune_grid(
+    flow8,
+    resamples=val_split,
+    grid=grid8,
+    metrics=loss_fn,
+    control=control_grid(verbose=TRUE, allow_par=TRUE)
+)
+toc()
+
+tune8_val %>% show_best(metric='roc_auc')
+
+best_params <- tune8_val %>% select_best(metric='roc_auc')
+
+flow8_final <- flow8 %>% finalize_workflow(best_params)
+flow8_final
+
+val8 <- fit_resamples(flow8_final, resamples=val_split, metrics=loss_fn)
+val8 %>% collect_metrics()
