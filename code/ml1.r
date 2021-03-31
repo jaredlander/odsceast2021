@@ -167,3 +167,21 @@ boost_tree(mode='classification') %>% set_engine('xgboost')
 xg_spec1 <- boost_tree(mode='classification', trees=100) %>% 
     set_engine('xgboost')
 xg_spec1
+
+# Workflows ###
+
+# from {workflows}
+
+flow1 <- workflow() %>% 
+    add_recipe(rec1) %>% 
+    add_model(xg_spec1)
+flow1
+
+fit1 <- fit(flow1, data=train)
+fit1
+fit1 %>% class()
+
+fit1 %>% extract_model() %>% class()
+
+# variable importance plot
+fit1 %>% extract_model() %>% vip()
