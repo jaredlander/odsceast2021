@@ -231,3 +231,83 @@ cv1$.metrics[[1]]
 cv1$.metrics[[2]]
 
 cv1 %>% collect_metrics()
+
+xg_spec2 <- boost_tree(mode='classification', trees=300) %>% 
+    set_engine('xgboost')
+
+xg_spec1
+xg_spec2
+
+flow2 <- flow1 %>% 
+    update_model(xg_spec2)
+flow1
+flow2
+
+val2 <- fit_resamples(object=flow2, resamples=val_split, metrics=loss_fn)
+val2
+val1
+
+val1 %>% collect_metrics()
+val2 %>% collect_metrics()
+
+xg_spec3 <- boost_tree(mode='classification', 
+                       trees=300, learn_rate=0.15) %>% 
+    set_engine('xgboost')
+
+flow3 <- flow2 %>% 
+    update_model(xg_spec3)
+
+val3 <- fit_resamples(flow3, resamples=val_split, metrics=loss_fn)
+
+val3 %>% collect_metrics()
+
+# More Recipes ####
+
+rec2 <- recipe(Status ~ ., data=train) %>% 
+    # xgboost can handle, will remove later
+    themis::step_downsample(Status, under_ratio=1.2) %>% 
+    step_other(all_nominal(), -Status, other='Misc') %>% 
+    # remove columns with very little variance
+    # as opposed to step_zv
+    step_nzv(all_predictors()) %>% 
+    step_dummy(all_nominal(), -Status, one_hot=TRUE)
+
+flow4 <- flow3 %>% 
+    update_recipe(rec2)
+flow4
+
+val4 <- fit_resamples(flow4, resamples=val_split, metrics=loss_fn)
+val4 %>% collect_metrics()
+
+# Unbalanced Data ####
+
+rec3 <- recipe(Status ~ ., data=train) %>% 
+    step_other(all_nominal(), -Status, other='Misc') %>% 
+    # remove columns with very little variance
+    # as opposed to step_zv
+    step_nzv(all_predictors()) %>% 
+    step_dummy(all_nominal(), -Status, one_hot=TRUE)
+
+# scale_pos_weight
+
+scaler <- train %>% 
+    count(Status) %>% 
+    pull(n) %>%
+    rev() %>%
+    reduce(`/`)
+2561/1004
+scaler
+
+xg_spec5 <- boost_tree(mode='classification', 
+                       trees=300, learn_rate=0.15) %>% 
+    set_engine('xgboost', scale_pos_weight=!!scaler)
+xg_spec5
+
+flow5 <- flow4 %>% 
+    update_model(xg_spec5)
+flow5
+
+val5 <- fit_resamples(flow5, resamples=val_split, metrics=loss_fn)
+
+val4 %>% collect_metrics()
+val5 %>% collect_metrics()
