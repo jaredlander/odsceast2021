@@ -88,7 +88,7 @@ test
 # ..., attributes, independent variables, descriptors. context, 
 # ..., subject variables
 
-# two primary ways to deal with unbalanced data:
+# two primary ways to deal with imbalanced data:
 # 1) upsample the minority
 # 2) downsample the majority class
 
@@ -279,7 +279,7 @@ flow4
 val4 <- fit_resamples(flow4, resamples=val_split, metrics=loss_fn)
 val4 %>% collect_metrics()
 
-# Unbalanced Data ####
+# Imbalanced Data ####
 
 rec3 <- recipe(Status ~ ., data=train) %>% 
     step_other(all_nominal(), -Status, other='Misc') %>% 
@@ -311,3 +311,46 @@ val5 <- fit_resamples(flow5, resamples=val_split, metrics=loss_fn)
 
 val4 %>% collect_metrics()
 val5 %>% collect_metrics()
+
+# Tune Parameters ####
+
+# from {tune} and {dials}
+
+xg_spec6 <- boost_tree(
+    mode='classification',
+    learn_rate=0.15,
+    tree_depth=4,
+    trees=tune()
+) %>% 
+    set_engine('xgboost', scale_pos_weight=!!scaler)
+xg_spec6
+
+flow6 <- flow5 %>% 
+    update_model(xg_spec6)
+flow6
+
+# fails
+# because our workflow has a parameter that needs tuning
+val6 <- fit_resamples(flow6, resamples=val_split, metrics=loss_fn)
+# neither will fit()
+
+# run in parallel
+registerDoFuture()
+cl <- makeCluster(6)
+plan(cluster, workers=cl)
+
+# only if using a dark theme
+options(tidymodels.dark=TRUE)
+
+tic()
+tune6_val <- tune_grid(
+    flow6, 
+    resamples=val_split,
+    grid=30,
+    metrics=loss_fn,
+    control=control_grid(verbose=TRUE, allow_par=TRUE)
+)
+toc()
+tune6_val %>% collect_metrics()
+
+tune6_val %>% show_best(metric='roc_auc')
