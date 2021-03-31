@@ -56,5 +56,63 @@ ggplot(credit, aes(x=Age, y=Income, color=Status)) +
 
 ggplot(credit, aes(x=Age, y=Income, color=Status)) + 
     geom_hex() + 
+    scale_fill_gradient(low='red', high='blue') +
     facet_wrap(~ Status) + 
     theme(legend.position='bottom')
+
+# Split the Data ####
+
+set.seed(8261)
+
+# from {rsample}
+credit_split <- initial_split(credit, prop=0.8, strata='Status')
+credit_split
+class(credit_split)
+
+train <- training(credit_split)
+test <- testing(credit_split)
+
+train
+test
+
+# Feature Engineering ####
+# also called preprocessing
+
+# from {recipes}
+
+# goal: relate outcome to inputs
+
+# outcomes: response, y, label, target, output, known, result,
+# ..., dependent variable, event, range
+# inputs: predictors, x, features, covariates, variables, data,
+# ..., attributes, independent variables, descriptors. context, 
+# ..., subject variables
+
+# two primary ways to deal with unbalanced data:
+# 1) upsample the minority
+# 2) downsample the majority class
+
+library(useful)
+colors1 <- tibble(Color=c('blue', 'green', 'blue', 'red', 'red', 
+                          'yellow', 'green'))
+build.x(~ Color, data=colors1)
+build.x(~ Color, data=colors1, contrasts=FALSE)
+
+rec1 <- recipe(Status ~ ., data=train) %>% 
+    # xgboost can handle, will remove later
+    themis::step_downsample(Status, under_ratio=1.2) %>% 
+    # not really needed for xgboost
+    step_normalize(Age, Price) %>% 
+    step_other(all_nominal(), -Status, other='Misc') %>% 
+    # remove columns with very little variance
+    # as opposed to step_zv
+    step_nzv(all_predictors()) %>% 
+    # imputation: filling in missing values
+    # not needed for xgboost
+    step_modeimpute(all_nominal(), -Status) %>% 
+    step_knnimpute(all_numeric()) %>% 
+    step_dummy(all_nominal(), -Status, one_hot=TRUE)
+
+rec1    
+
+rec1 %>% prep() %>% juice()
