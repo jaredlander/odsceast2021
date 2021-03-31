@@ -507,6 +507,26 @@ tune8_val %>% show_best(metric='roc_auc')
 
 best_params <- tune8_val %>% select_best(metric='roc_auc')
 
+params8.1 <- flow8 %>% 
+    parameters() %>% 
+    update(
+        trees=trees(range=c(180, 220)),
+        tree_depth=tree_depth(range=c(1, 5)),
+        sample_size=sample_prop(range=c(0.5, .8)),
+        freq_cut=freq_cut(range=c(7, 12))
+    )
+grid8.1 <- grid_max_entropy(params8.1, size=80)
+tic()
+tune8_val.1 <- tune_grid(
+    flow8,
+    resamples=val_split,
+    grid=grid8.1,
+    metrics=loss_fn,
+    control=control_grid(verbose=TRUE, allow_par=TRUE)
+)
+toc()
+tune8_val.1 %>% show_best(metric='roc_auc')
+
 flow8_final <- flow8 %>% finalize_workflow(best_params)
 flow8_final
 
@@ -517,3 +537,16 @@ val8 %>% collect_metrics()
 
 results8 <- last_fit(flow8_final, split=credit_split, metrics=loss_fn)
 results8 %>% collect_metrics()
+
+# Fit on Entire Data ####
+
+fit8 <- fit(flow8_final, data=credit)
+fit8
+
+# Predictions on New Data ####
+
+# this line won't work unless insert_data_here is a real data.frame
+preds8 <- predict(fit8, new_data=insert_data_here)
+
+# {workflowsets}
+# {stacks}
