@@ -512,3 +512,8 @@ flow8_final
 
 val8 <- fit_resamples(flow8_final, resamples=val_split, metrics=loss_fn)
 val8 %>% collect_metrics()
+
+# Last Fit ####
+
+results8 <- last_fit(flow8_final, split=credit_split, metrics=loss_fn)
+results8 %>% collect_metrics()
