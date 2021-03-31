@@ -354,3 +354,16 @@ toc()
 tune6_val %>% collect_metrics()
 
 tune6_val %>% show_best(metric='roc_auc')
+
+tic()
+tune6_cv <- tune_grid(
+    flow6, 
+    resamples=cv_split,
+    grid=30,
+    metrics=loss_fn,
+    control=control_grid(verbose=TRUE, allow_par=TRUE)
+)
+toc()
+
+tune6_val %>% show_best(metric='roc_auc')
+tune6_cv %>% show_best(metric='roc_auc')
