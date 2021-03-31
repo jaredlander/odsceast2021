@@ -208,4 +208,26 @@ val1$.metrics[[1]]
 
 val1 %>% collect_metrics()
 
+# split training data into training.1 and val
+# fit a model on training.1
+# use val and model to make predictions
+# compare predictions from model with true outcome variable in val
+# use AUC, accuracy or log loss for that comparison
+
+# or use fit_resamples()
+
 # cross-validation
+
+cv_split <- vfold_cv(data=train, v=5, strata='Status')
+cv_split
+cv_split %>% class()
+cv_split$splits[[1]]
+cv_split$splits[[1]] %>% class()
+
+val1 <- fit_resamples(object=flow1, resamples=val_split, metrics=loss_fn)
+cv1 <- fit_resamples(object=flow1, resamples=cv_split, metrics=loss_fn)
+cv1
+cv1$.metrics[[1]]
+cv1$.metrics[[2]]
+
+cv1 %>% collect_metrics()
