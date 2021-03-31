@@ -367,3 +367,59 @@ toc()
 
 tune6_val %>% show_best(metric='roc_auc')
 tune6_cv %>% show_best(metric='roc_auc')
+
+tune6_cv %>% autoplot()
+
+# Other Tuning Parameters ####
+
+xg_spec7 <- boost_tree(
+    mode='classification',
+    trees=tune(),
+    learn_rate=0.15,
+    tree_depth=tune(),
+    sample_size=tune()
+) %>% 
+    set_engine('xgboost', scale_pos_weight=!!scaler)
+
+flow7 <- flow6 %>% 
+    update_model(xg_spec7)
+
+flow7
+
+flow7 %>% parameters()
+flow7 %>% parameters() %>% pull(object)
+
+# from {dials}
+trees()
+trees(range=c(20, 800))
+
+tree_depth()
+tree_depth(range=c(2, 8))
+
+sample_size()
+sample_size(range=c(5, 20))
+
+sample_prop()
+sample_prop(range=c(0.3, 1))
+
+params7 <- flow7 %>% 
+    parameters() %>% 
+    update(
+        trees=trees(range=c(20,800)),
+        tree_depth=tree_depth(range=c(2, 8)),
+        sample_size=sample_prop(range=c(0.3, 1))
+    )
+
+params7 %>% pull(object)
+
+tic()
+tune7_val <- tune_grid(
+    flow7,
+    resamples=val_split,
+    param_info=params7,
+    grid=40,
+    control=control_grid(verbose=TRUE, allow_par=TRUE)
+)
+toc()
+
+tune7_val %>% show_best(metric='roc_auc')
