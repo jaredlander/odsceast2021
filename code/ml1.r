@@ -185,3 +185,27 @@ fit1 %>% extract_model() %>% class()
 
 # variable importance plot
 fit1 %>% extract_model() %>% vip()
+
+# How Did We Do? ####
+
+# AIC, accuracy, logloss, AUC
+
+# from {yardstick}
+
+loss_fn <- metric_set(accuracy, roc_auc, mn_log_loss)
+loss_fn
+
+val_split <- validation_split(data=train, prop=0.8, strata='Status')
+val_split
+val_split$splits[[1]]
+val_split$splits[[1]] %>% class()
+
+# from {tune}
+
+val1 <- fit_resamples(object=flow1, resamples=val_split, metrics=loss_fn)
+val1
+val1$.metrics[[1]]
+
+val1 %>% collect_metrics()
+
+# cross-validation
