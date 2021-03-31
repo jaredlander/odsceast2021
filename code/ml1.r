@@ -116,3 +116,54 @@ rec1 <- recipe(Status ~ ., data=train) %>%
 rec1    
 
 rec1 %>% prep() %>% juice()
+
+# Model Specification ####
+
+# from {parsnip}
+
+# boosted tree
+boost_tree()
+# BART: dbart
+# gbm
+# catboost
+# xgboost
+# LightGBM: May NY R Meetup: meetup.com/nyhackr
+
+# model types
+# model modes
+# engines
+# parameters
+
+parsnip::decision_tree
+parsnip::rand_forest
+parsnip::svm_poly
+parsnip::svm_rbf
+parsnip::linear_reg
+multinom_reg
+logistic_reg
+boost_tree
+surv_reg
+
+linear_reg()
+linear_reg() %>% set_engine('glmnet')
+linear_reg() %>% set_engine('lm')
+linear_reg() %>% set_engine('stan')
+linear_reg() %>% set_engine('spark')
+linear_reg() %>% set_engine('keras')
+
+show_engines('linear_reg')
+
+show_engines('logistic_reg')
+
+logistic_reg() %>% set_engine('keras')
+
+show_engines('boost_tree')
+show_engines('surv_reg')
+
+boost_tree() %>% set_engine('xgboost')
+boost_tree() %>% set_engine('xgboost') %>% set_mode('classification')
+boost_tree(mode='classification') %>% set_engine('xgboost')
+
+xg_spec1 <- boost_tree(mode='classification', trees=100) %>% 
+    set_engine('xgboost')
+xg_spec1
