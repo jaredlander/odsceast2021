@@ -418,8 +418,25 @@ tune7_val <- tune_grid(
     resamples=val_split,
     param_info=params7,
     grid=40,
+    metrics=loss_fn,
     control=control_grid(verbose=TRUE, allow_par=TRUE)
 )
 toc()
 
 tune7_val %>% show_best(metric='roc_auc')
+tune7_val %>% autoplot(metric='roc_auc')
+
+grid7 <- grid_max_entropy(params7, size=80)
+grid7
+
+tic()
+tune7_val.1 <- tune_grid(
+    flow7,
+    resamples=val_split,
+    metrics=loss_fn,
+    control=control_grid(verbose=TRUE, allow_par=TRUE),
+    grid=grid7
+)
+toc()
+
+tune7_val.1 %>% show_best(metric='roc_auc')
