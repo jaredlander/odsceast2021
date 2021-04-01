@@ -194,3 +194,59 @@ train_forecast %>%
     facet_wrap(~.model, ncol=1)
 
 accuracy(train_forecast, test)
+
+
+# STL ####
+
+# Seasonality, Trend, L (loess)
+
+elec %>% 
+    model(
+        stl=STL(ActivePower ~ trend(window=7))
+    ) %>% 
+    components() %>% 
+    autoplot()
+
+# ETS ####
+
+# Error, Trend, Seasonality
+
+# Error: additive, multiplicative, none
+# trend: additive, multiplicative, none
+# seasonality: additive, multiplicative, none
+
+ets_mod <- elec %>% 
+    model(
+        ana=ETS(ActivePower ~ error('A') + trend('N') + season('A')),
+        aan=ETS(ActivePower ~ error('A') + trend('A') + season('N')),
+        aaa=ETS(ActivePower ~ error('A') + trend('A') + season('A')),
+        ama=ETS(ActivePower ~ error('A') + trend('M') + season('A'))
+    )
+
+ets_mod
+ets_mod %>% select(ana) %>% report()
+ets_mod %>% glance()
+ets_mod %>% glance() %>% slice_min(AICc)
+
+ets_mod %>% forecast(h=90) %>% autoplot(elec2010)
+ets_mod %>% forecast(h=90) %>% autoplot(elec2010, level=NULL)
+ets_mod %>% 
+    select(-ama) %>% 
+    forecast(h=90) %>% autoplot(elec2010, level=NULL)
+ets_mod %>% 
+    select(-ama) %>% 
+    forecast(h=90) %>% autoplot(elec2010)
+
+# error, trend, seasonlity
+# additive, multiplicative, none
+# 27 combinations
+
+ets_auto <- elec %>% 
+    model(
+        auto=ETS(ActivePower)
+    )
+ets_auto %>% report()
+
+ets_auto %>% 
+    forecast(h=90) %>% 
+    autoplot(elec2010)
