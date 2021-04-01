@@ -132,3 +132,65 @@ simple_mods %>% forecast(h=90)
 simple_mods %>% forecast(h=90) %>% View
 simple_mods %>% forecast(h=90) %>% autoplot(elec2010)
 simple_mods %>% forecast(h=90) %>% autoplot(elec2010, level=NULL)
+
+
+# Transformations ####
+
+elec %>% autoplot(ActivePower)
+elec %>% autoplot(log(ActivePower))
+
+elec %>% autoplot(box_cox(ActivePower, lambda=1.7))
+elec %>% autoplot(box_cox(ActivePower, lambda=0.7))
+elec %>% autoplot(box_cox(ActivePower, lambda=0.07))
+elec %>% autoplot(box_cox(ActivePower, lambda=0.0))
+
+# feasts
+elec %>% 
+    features(ActivePower, features=guerrero)
+
+elec %>% autoplot(box_cox(ActivePower, lambda=0.67))
+
+# Fitted Values and Residuals ####
+
+simple_mods %>% augment()
+
+# Prediction Intervals ####
+
+snaive_mod %>% forecast(h=10) %>% hilo()
+snaive_mod %>% forecast(h=10) %>% hilo(level=95)
+
+# Evaluating Model ####
+
+snaive_augment <- snaive_mod %>% augment()
+snaive_augment
+
+mean_augment <- mean_mod %>% augment()
+mean_augment
+
+mean_augment %>% autoplot(.resid)
+
+mean_mod %>% gg_tsresiduals()
+
+train <- elec %>% 
+    filter_index(. ~ '2010-08-31')
+test <- elec %>% 
+    filter_index('2010-09-01' ~ .)
+
+train_mods <- train %>% 
+    model(
+        Mean=MEAN(ActivePower),
+        SNaive=SNAIVE(ActivePower ~ lag('year'))
+    )        
+train_mods
+
+train_mods %>% forecast(h=nrow(test))
+train_mods %>% forecast(new_data=test)
+
+
+train_forecast <- train_mods %>% forecast(new_data=test)
+train_forecast %>% 
+    autoplot(train %>% filter_index('2010'), level=NULL) +
+    autolayer(test, ActivePower) + 
+    facet_wrap(~.model, ncol=1)
+
+accuracy(train_forecast, test)
