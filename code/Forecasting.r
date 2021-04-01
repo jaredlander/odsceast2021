@@ -250,3 +250,31 @@ ets_auto %>% report()
 ets_auto %>% 
     forecast(h=90) %>% 
     autoplot(elec2010)
+
+# Differencing ####
+
+elec %>% autoplot()
+elec_diff <- elec %>% 
+    mutate(
+        PowerDiff=difference(ActivePower),
+        PowerDiff2=difference(ActivePower, differences=2)
+    )
+elec_diff %>% select(ActivePower, PowerDiff, PowerDiff2)
+1269-2749
+1014-1269
+3259-1014
+
+-255 - -1480
+2245 - -255
+-546 - 2245
+
+elec_diff %>% 
+    autoplot(ActivePower) + 
+    autolayer(elec_diff, PowerDiff, color='green') + 
+    autolayer(elec_diff, PowerDiff2, color='blue', alpha=1/3)
+
+elec %>% 
+    mutate(PowerLag=difference(ActivePower, lag=2)) %>% 
+    select(ActivePower, PowerLag)
+1014-2749
+3259-1269
