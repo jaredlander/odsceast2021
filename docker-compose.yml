@@ -1,0 +1,13 @@
+version: '3.4'
+
+services:
+    plumber_api:
+        image: jaredlander/odsceast2021:latest
+        container_name: model_api
+        ports:
+            - 8000:8000
+        restart: unless-stopped
+        build:
+            context: .
+            dockerfile: ./Dockerfile
+        
