@@ -278,3 +278,51 @@ elec %>%
     select(ActivePower, PowerLag)
 1014-2749
 3259-1269
+
+# log difference = log(today) - log(yesterday) = log(today/yesterday) = log returns
+
+# ARIMA ####
+
+# autoregressive integrated moving average
+
+# y_t ~ y_{t-1}
+
+elec %>% 
+    mutate(Lag=lag(ActivePower)) %>% 
+    select(ActivePower, Lag) %>% 
+    lm(ActivePower ~ Lag, data=.)
+
+# ARIMA(p,d,q)
+# ARIMA(p,d,q)(P,D,Q)
+
+arima_323 <- elec %>% 
+    model(arima=ARIMA(ActivePower ~ pdq(3, 2, 3) + PDQ(0, 0, 0))
+    )
+arima_323 %>% report()
+
+arima_323 %>% forecast(h=90) %>% autoplot(elec2010)
+
+arima_212_100 <- elec %>% 
+    model(
+        ARIMA(ActivePower ~ pdq(2, 1, 2) + PDQ(1, 0, 0))
+    )
+arima_212_100 %>% forecast(h=90) %>% autoplot(elec2010)
+
+arima_mod <- elec %>% 
+    model(
+        ARIMA(ActivePower)
+    )
+arima_mod %>% report()
+arima_mod %>% forecast(h=90) %>% autoplot(elec2010)
+
+arima_mod2 <- elec %>% 
+    model(
+        ARIMA(ActivePower ~ pdq(0:4, 0:2, 0:4) + PDQ(0:3, 0:2, 0:3))
+    )
+arima_mod2 %>% report()
+
+arima_mod3 <- elec %>% 
+    model(
+        ARIMA(ActivePower ~ pdq(0:4, 0:2, 0:4) + PDQ(0:3, 0:2, 0:3),
+              stepwise=FALSE, approximation=FALSE, greedy=FALSE)
+    )
