@@ -49,3 +49,17 @@ function(Income, Seniority, Records, Amount, Job)
         )
     )
 }
+
+#* Predict with data in the body, expects a row of JSON
+#* @get /predict2
+function(req)
+{
+    # cat(class(req$body))
+    return(
+        list(
+            predicted_status=predict(
+                the_mod, type='prob', 
+                new_data=as.data.frame(req$postBody))
+        )
+    )
+}
