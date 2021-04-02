@@ -24,6 +24,8 @@ function(x, y)
     return(as.numeric(x) + as.numeric(y))
 }
 
+library(workflows)
+
 the_mod <- readr::read_rds('mod0.rds')
 
 #* Predict status from individual data
@@ -59,7 +61,7 @@ function(req)
         list(
             predicted_status=predict(
                 the_mod, type='prob', 
-                new_data=as.data.frame(req$postBody))
+                new_data=jsonlite::fromJSON(req$postBody))
         )
     )
 }
