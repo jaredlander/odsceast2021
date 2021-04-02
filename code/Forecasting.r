@@ -326,3 +326,7 @@ arima_mod3 <- elec %>%
         ARIMA(ActivePower ~ pdq(0:4, 0:2, 0:4) + PDQ(0:3, 0:2, 0:3),
               stepwise=FALSE, approximation=FALSE, greedy=FALSE)
     )
+arima_mod3 %>% report()
+arima_mod3 %>% forecast(h=90) %>% autoplot(elec2010)
+
+arima_mod3 %>% gg_tsresiduals()
